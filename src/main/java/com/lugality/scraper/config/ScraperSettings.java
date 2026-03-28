@@ -16,7 +16,8 @@ import java.nio.file.Paths;
 @Component
 @ConfigurationProperties(prefix = "scraper")
 public class ScraperSettings {
-
+    private String googleDriveFolderId;
+    private String googleServiceAccountJson;
     // ── Email (Worker 0 / primary) ──
     private String emailAddress;
     private String emailAppPassword;
