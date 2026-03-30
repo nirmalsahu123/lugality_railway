@@ -14,7 +14,7 @@
     <groupId>com.lugality</groupId>
     <artifactId>scraper</artifactId>
     <version>1.0.0</version>
-    <n>IP India Trademark Scraper</n>
+    <name>IP India Trademark Scraper</name>
     <description>Spring Boot conversion of IP India Trademark Scraper</description>
 
     <properties>
