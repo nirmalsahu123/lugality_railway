@@ -5,12 +5,17 @@ COPY pom.xml .
 COPY src ./src
 
 RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
-RUN mvn clean package -DskipTests
+
+RUN mvn clean package -DskipTests \
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+    -Dorg.slf4j.simpleLogger.showDateTime=true \
+    --no-transfer-progress
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN mvn exec:java -e \
     -Dexec.mainClass=com.microsoft.playwright.CLI \
-    -Dexec.args="install chromium"
+    -Dexec.args="install chromium" \
+    --no-transfer-progress
 
 FROM eclipse-temurin:21-jre-jammy
 
@@ -30,10 +35,7 @@ COPY --from=builder /app/target/*.jar app.jar
 COPY --from=builder /ms-playwright /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Copy applications.json into image
 COPY applications.json /app/applications.json
-
-# Copy startup script
 COPY startup.sh /app/startup.sh
 RUN chmod +x /app/startup.sh
 
