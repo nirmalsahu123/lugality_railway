@@ -15,14 +15,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
-/**
- * Manages Playwright browser lifecycle for one worker.
- *
- * Changes vs original:
- *  - needsRefresh() removed — re-login is now count-based (every N apps) in WorkflowOrchestrator
- *  - isAlive() added — used before each search to detect dead context before crash
- *  - start() / stop() are safe to call multiple times (idempotent)
- */
 @Slf4j
 @Component
 @Scope("prototype")
@@ -40,7 +32,7 @@ public class BrowserManager {
     @Getter
     private int workerId = 0;
 
-    private final Path debugDir   = Paths.get("./output/debug");
+    private final Path debugDir    = Paths.get("./output/debug");
     private final Path downloadDir = Paths.get("./output/downloads");
 
     @Autowired
@@ -52,7 +44,6 @@ public class BrowserManager {
         this.workerId = workerId;
     }
 
-    /** Start the browser. Safe to call after stop(). */
     public Page start() {
         try {
             debugDir.toFile().mkdirs();
@@ -70,7 +61,40 @@ public class BrowserManager {
                             "--disable-dev-shm-usage",
                             "--disable-blink-features=AutomationControlled",
                             "--disable-gpu",
-                            "--single-process"          // helps on Railway's constrained containers
+                            "--single-process",
+                            // ── Memory optimization args ──────────────────
+                            "--disable-extensions",
+                            "--disable-plugins",
+                            "--disable-background-networking",
+                            "--disable-background-timer-throttling",
+                            "--disable-backgrounding-occluded-windows",
+                            "--disable-breakpad",
+                            "--disable-client-side-phishing-detection",
+                            "--disable-component-update",
+                            "--disable-default-apps",
+                            "--disable-domain-reliability",
+                            "--disable-features=AudioServiceOutOfProcess",
+                            "--disable-hang-monitor",
+                            "--disable-ipc-flooding-protection",
+                            "--disable-notifications",
+                            "--disable-offer-store-unmasked-wallet-cards",
+                            "--disable-popup-blocking",
+                            "--disable-print-preview",
+                            "--disable-prompt-on-repost",
+                            "--disable-renderer-backgrounding",
+                            "--disable-speech-api",
+                            "--disable-sync",
+                            "--hide-scrollbars",
+                            "--ignore-gpu-blacklist",
+                            "--metrics-recording-only",
+                            "--mute-audio",
+                            "--no-first-run",
+                            "--no-pings",
+                            "--no-zygote",
+                            "--password-store=basic",
+                            "--use-gl=swiftshader",
+                            "--use-mock-keychain",
+                            "--js-flags=--max-old-space-size=128"
                     ));
 
             browser = playwright.chromium().launch(launchOptions);
@@ -95,12 +119,11 @@ public class BrowserManager {
         }
     }
 
-    /** Stop browser and release all resources. Idempotent. */
     public void stop() {
         log.info("[Worker {}] Stopping browser...", workerId);
-        try { if (page    != null) { page.close();    page    = null; } } catch (Exception ignored) {}
-        try { if (context != null) { context.close(); context = null; } } catch (Exception ignored) {}
-        try { if (browser != null) { browser.close(); browser = null; } } catch (Exception ignored) {}
+        try { if (page      != null) { page.close();      page      = null; } } catch (Exception ignored) {}
+        try { if (context   != null) { context.close();   context   = null; } } catch (Exception ignored) {}
+        try { if (browser   != null) { browser.close();   browser   = null; } } catch (Exception ignored) {}
         try { if (playwright != null) { playwright.close(); playwright = null; } } catch (Exception ignored) {}
     }
 
@@ -108,14 +131,10 @@ public class BrowserManager {
         return page != null;
     }
 
-    /**
-     * Check whether the browser context / page is still responsive.
-     * Used before each search to detect a dead Playwright context before it throws Error{}.
-     */
     public boolean isAlive() {
         if (page == null) return false;
         try {
-            page.title(); // lightweight DOM probe
+            page.title();
             return true;
         } catch (Exception e) {
             log.warn("[Worker {}] isAlive() probe failed: {}", workerId, e.getMessage());
@@ -123,7 +142,6 @@ public class BrowserManager {
         }
     }
 
-    /** Navigate to a URL with retry on first failure. */
     public void navigate(String url) {
         log.info("[Worker {}] Navigating to: {}", workerId, url);
         try {
@@ -139,7 +157,6 @@ public class BrowserManager {
         }
     }
 
-    /** Take a debug screenshot. Never throws. */
     public Path screenshot(String name) {
         try {
             String ts = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
