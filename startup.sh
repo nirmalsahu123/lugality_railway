@@ -2,7 +2,7 @@
 
 echo "🚀 Starting Spring Boot application..."
 java \
-    -Xms256m -Xmx768m \
+    -Xms64m -Xmx300m \
     -XX:+UseG1GC \
     -XX:MaxGCPauseMillis=200 \
     -jar app.jar &
