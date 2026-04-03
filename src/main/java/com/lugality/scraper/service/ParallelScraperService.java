@@ -34,7 +34,7 @@ public class ParallelScraperService {
 
     private final WorkflowOrchestrator orchestrator;
     private final ScraperSettings settings;
-    private final LocalStorageService localStorageService;
+    private final  GoogleDriveStorageService localStorageService;
 
     // Semaphore that allows only ONE worker to be in the login phase at a time.
     // After login, the worker releases the permit so the next worker can log in.
