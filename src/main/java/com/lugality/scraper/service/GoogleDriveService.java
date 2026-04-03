@@ -8,6 +8,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.UserCredentials;
 import com.google.api.client.http.FileContent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,17 @@ public class GoogleDriveService {
     @Value("${scraper.google-drive-folder-id:}")
     private String folderId;
 
+    // OAuth2 credentials
+    @Value("${scraper.google-client-id:}")
+    private String clientId;
+
+    @Value("${scraper.google-client-secret:}")
+    private String clientSecret;
+
+    @Value("${scraper.google-refresh-token:}")
+    private String refreshToken;
+
+    // Service account fallback
     @Value("${scraper.google-service-account-json:}")
     private String serviceAccountJson;
 
@@ -34,15 +46,36 @@ public class GoogleDriveService {
 
     @PostConstruct
     public void init() {
-        if (serviceAccountJson == null || serviceAccountJson.isBlank()
-                || folderId == null || folderId.isBlank()) {
-            log.warn("⚠️ Google Drive not configured — uploads disabled");
+        if (folderId == null || folderId.isBlank()) {
+            log.warn("⚠️ Google Drive folder ID not set — uploads disabled");
             return;
         }
+
         try {
-            GoogleCredentials credentials = GoogleCredentials
-                    .fromStream(new ByteArrayInputStream(serviceAccountJson.getBytes()))
-                    .createScoped(Collections.singletonList(DriveScopes.DRIVE));
+            GoogleCredentials credentials;
+
+            // Try OAuth2 first (preferred)
+            if (clientId != null && !clientId.isBlank()
+                    && clientSecret != null && !clientSecret.isBlank()
+                    && refreshToken != null && !refreshToken.isBlank()) {
+
+                log.info("🔐 Using OAuth2 credentials for Google Drive");
+                credentials = UserCredentials.newBuilder()
+                        .setClientId(clientId)
+                        .setClientSecret(clientSecret)
+                        .setRefreshToken(refreshToken)
+                        .build();
+
+            } else if (serviceAccountJson != null && !serviceAccountJson.isBlank()) {
+                // Fallback to service account
+                log.info("🔑 Using Service Account for Google Drive");
+                credentials = GoogleCredentials
+                        .fromStream(new ByteArrayInputStream(serviceAccountJson.getBytes()))
+                        .createScoped(Collections.singletonList(DriveScopes.DRIVE));
+            } else {
+                log.warn("⚠️ No Google Drive credentials configured — uploads disabled");
+                return;
+            }
 
             driveService = new Drive.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
@@ -52,7 +85,8 @@ public class GoogleDriveService {
                     .build();
 
             enabled = true;
-            log.info("✅ Google Drive service initialized. Folder: {}", folderId);
+            log.info("✅ Google Drive initialized (OAuth2). Folder: {}", folderId);
+
         } catch (Exception e) {
             log.error("❌ Google Drive init failed: {}", e.getMessage());
         }
