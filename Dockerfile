@@ -45,10 +45,4 @@ EXPOSE 8080
 ENV PORT=8080
 ENV HEADLESS=true
 
-ENTRYPOINT ["java", \
-    "-Xms64m", "-Xmx300m", \
-    "-XX:+UseG1GC", \
-    "-XX:MaxGCPauseMillis=200", \
-    "-XX:+UseStringDeduplication", \
-    "-jar", "app.jar"]
-    
+ENTRYPOINT ["/app/startup.sh"]
