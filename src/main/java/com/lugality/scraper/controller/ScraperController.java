@@ -1,7 +1,7 @@
 package com.lugality.scraper.controller;
 
 import com.lugality.scraper.config.ScraperSettings;
-import com.lugality.scraper.service.LocalStorageService;
+import com.lugality.scraper.service.GoogleDriveStorageService;
 import com.lugality.scraper.service.ParallelScraperService;
 import com.lugality.scraper.service.ParallelScraperService.BatchResult;
 import com.lugality.scraper.workflow.ScraperState;
