@@ -40,7 +40,7 @@ public class ScraperController {
 
     private final ParallelScraperService parallelScraperService;
     private final WorkflowOrchestrator workflowOrchestrator;
-    private final LocalStorageService localStorageService;
+    private final GoogleDriveStorageService localStorageService;
     private final ScraperSettings settings;
 
     // In-memory job tracking (use Redis/DB in production)
