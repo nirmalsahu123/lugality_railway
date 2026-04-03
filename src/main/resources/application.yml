@@ -53,6 +53,9 @@ scraper:
   storage-mode: ${STORAGE_MODE:local}
   local-data-dir: ${LOCAL_DATA_DIR:./output/data}
   local-pdf-dir: ${LOCAL_PDF_DIR:./output/pdfs}
+  google-client-id: ${GOOGLE_CLIENT_ID:}
+  google-client-secret: ${GOOGLE_CLIENT_SECRET:}
+  google-refresh-token: ${GOOGLE_REFRESH_TOKEN:}
 
   # ── Google Drive (required when storage-mode=google_drive) ────────────────
   google-drive-folder-id: ${GOOGLE_DRIVE_FOLDER_ID:}
